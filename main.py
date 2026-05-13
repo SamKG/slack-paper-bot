@@ -24,6 +24,37 @@ def save_toml(filepath, data):
     with open(filepath, 'w') as f:
         toml.dump(data, f)
 
+def summarize_with_openrouter(title, abstract):
+    # Using the key provided by the user via environment variable
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    if not abstract or abstract == 'No summary available.':
+        return abstract
+        
+    prompt = f"Please read the abstract for the paper titled '{title}'. Provide a concise two-sentence summary of the paper. Then, add a brief note identifying the main finding, central concept, or 'main figure' (if mentioned). Abstract: {abstract}"
+    
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {openrouter_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "google/gemini-3.1-pro-preview",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ]
+            }
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"OpenRouter API failed: {e}")
+        if e.response is not None:
+            logging.error(f"OpenRouter response: {e.response.text}")
+        return abstract
+
 def send_slack_message(author_name, publication):
     if not SLACK_WEBHOOK_URL:
         logging.warning("SLACK_WEBHOOK_URL not set. Skipping Slack notification.")
@@ -33,7 +64,11 @@ def send_slack_message(author_name, publication):
     title = bib.get('title', 'Unknown Title')
     pub_url = publication.get('pub_url', '')
     authors_list = bib.get('author', 'Unknown Authors')
-    abstract = bib.get('abstract', bib.get('description', 'No summary available.'))
+    raw_abstract = bib.get('abstract', bib.get('description', 'No summary available.'))
+    
+    # Use OpenRouter to generate a 2-sentence summary and find the main figure/concept
+    logging.info(f"Generating summary with OpenRouter for '{title}'...")
+    abstract = summarize_with_openrouter(title, raw_abstract)
     
     # Truncate abstract if it's too long for Slack block limits
     if len(abstract) > 1000:
