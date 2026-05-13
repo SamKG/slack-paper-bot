@@ -4,6 +4,7 @@ import requests
 import toml
 from scholarly import scholarly
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -11,18 +12,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 load_dotenv()
 
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
-STATE_FILE = "state.json"
+STATE_FILE = "state.toml"
 AUTHORS_FILE = "authors.toml"
-
-def load_json(filepath, default):
-    if not os.path.exists(filepath):
-        return default
-    with open(filepath, 'r') as f:
-        return json.load(f)
-
-def save_json(filepath, data):
-    with open(filepath, 'w') as f:
-        json.dump(data, f, indent=4)
 
 def load_toml(filepath, default):
     if not os.path.exists(filepath):
@@ -76,7 +67,8 @@ def main():
         return
 
     authors = load_toml(AUTHORS_FILE, {})
-    state = load_json(STATE_FILE, {})
+    state = load_toml(STATE_FILE, {})
+    current_year = datetime.now().year
 
     for author_id, author_name in authors.items():
         logging.info(f"Checking author: {author_name} ({author_id})")
@@ -99,22 +91,35 @@ def main():
                     except Exception as e:
                         logging.warning(f"Could not fill pub details for {pub_id}: {e}")
                     
-                    new_pubs.append(pub)
+                    pub_year_str = pub.get('bib', {}).get('pub_year')
+                    is_recent = False
+                    if pub_year_str:
+                        try:
+                            pub_year = int(pub_year_str)
+                            if pub_year >= current_year - 1:
+                                is_recent = True
+                        except ValueError:
+                            # If year isn't parsing properly, assume it's recent just in case
+                            is_recent = True
+                    else:
+                        is_recent = True
+
+                    if is_recent:
+                        new_pubs.append(pub)
+                        
                     seen_pubs.append(pub_id)
             
             if new_pubs:
-                logging.info(f"Found {len(new_pubs)} new publications for {author_name}")
+                logging.info(f"Found {len(new_pubs)} new recent publications for {author_name}")
                 for pub in new_pubs:
                     send_slack_message(author_name, pub)
             else:
-                logging.info(f"No new publications for {author_name}")
+                logging.info(f"No new recent publications for {author_name}")
                 
         except Exception as e:
             logging.error(f"Error processing author {author_name} ({author_id}): {e}")
 
-    save_json(STATE_FILE, state)
+    save_toml(STATE_FILE, state)
 
 if __name__ == "__main__":
-    main()
-
     main()
