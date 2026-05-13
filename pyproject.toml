@@ -1,0 +1,16 @@
+[project]
+name = "slack-paper-bot"
+version = "0.1.0"
+description = "A Slack integration to monitor Google Scholar and announce new papers."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "python-dotenv",
+    "requests",
+    "scholarly",
+    "toml",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
