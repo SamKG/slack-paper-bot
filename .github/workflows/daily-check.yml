@@ -26,6 +26,7 @@ jobs:
       - name: Run script
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
         run: uv run main.py
 
       - name: Commit and push state changes

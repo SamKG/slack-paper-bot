@@ -70,6 +70,8 @@ def main():
     state = load_toml(STATE_FILE, {})
     current_year = datetime.now().year
 
+    setup_proxy()
+
     for author_id, author_name in authors.items():
         logging.info(f"Checking author: {author_name} ({author_id})")
         
@@ -105,6 +107,25 @@ def main():
                         is_recent = True
 
                     if is_recent:
+                        new_pubs.append(pub)
+                        
+                    seen_pubs.append(pub_id)
+            
+            if new_pubs:
+                logging.info(f"Found {len(new_pubs)} new recent publications for {author_name}")
+                for pub in new_pubs:
+                    send_slack_message(author_name, pub)
+            else:
+                logging.info(f"No new recent publications for {author_name}")
+                
+        except Exception as e:
+            logging.error(f"Error processing author {author_name} ({author_id}): {e}")
+
+    save_toml(STATE_FILE, state)
+
+if __name__ == "__main__":
+    main()
+ecent:
                         new_pubs.append(pub)
                         
                     seen_pubs.append(pub_id)
