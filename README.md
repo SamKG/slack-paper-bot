@@ -41,8 +41,9 @@ To enable this:
 3. Click **New repository secret**.
 4. Set the name to `SLACK_WEBHOOK_URL` and the value to your Slack Webhook URL.
 5. **(Highly Recommended)** Create another secret named `SCRAPER_API_KEY`. Google Scholar aggressively blocks data-center IP addresses (like GitHub Actions). The `scholarly` library has native support for [ScraperAPI](https://www.scraperapi.com/), which offers 5,000 free requests per month. Create a free account, get an API key, and save it as `SCRAPER_API_KEY` in your GitHub secrets.
-6. Make sure `authors.toml` is committed to the repository with the list of people you want to track.
-7. The action will automatically run once a day, post to Slack, and commit the updated `state.toml` file back to the repository so you don't get duplicate notifications.
+6. Add one more repository secret named `OPENROUTER_API_KEY` and set its value to your OpenRouter API key so the AI can generate 2-sentence summaries.
+7. Make sure `authors.toml` is committed to the repository with the list of people you want to track.
+8. The action will automatically run once a day, post to Slack, and commit the updated `state.toml` file back to the repository so you don't get duplicate notifications.
 
 ## Notes
 - Google Scholar aggressively blocks scrapers. If you are polling too often (or checking hundreds of authors), you may get IP blocked or hit CAPTCHAs. This bot uses the `scholarly` library. It's recommended to run this script only once a day or a few times a week.
