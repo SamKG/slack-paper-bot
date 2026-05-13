@@ -25,12 +25,23 @@ This bot monitors Google Scholar profiles and sends a Slack notification when a 
    Edit `authors.toml` and replace the example with the Scholar IDs of the people you want to track.
    The Scholar ID is the `user=` parameter in a Google Scholar profile URL. (e.g. `https://scholar.google.com/citations?user=QC61PIYAAAAJ` -> `QC61PIYAAAAJ`)
 
-4. **Run the Bot:**
+4. **Run the Bot (Locally):**
    Run the bot periodically (e.g., via a daily cron job):
    ```bash
    uv run main.py
    ```
    The bot keeps track of already seen papers in `state.toml`. If you want to test the Slack notification with an existing paper, you can manually remove a publication ID from `state.toml`.
+
+## GitHub Actions Automated Run
+This repository includes a GitHub Actions workflow that runs the script automatically every day. 
+
+To enable this:
+1. Go to your repository on GitHub.
+2. Navigate to **Settings** > **Secrets and variables** > **Actions**.
+3. Click **New repository secret**.
+4. Set the name to `SLACK_WEBHOOK_URL` and the value to your Slack Webhook URL.
+5. Make sure `authors.toml` is committed to the repository with the list of people you want to track.
+6. The action will automatically run once a day, post to Slack, and commit the updated `state.toml` file back to the repository so you don't get duplicate notifications.
 
 ## Notes
 - Google Scholar aggressively blocks scrapers. If you are polling too often (or checking hundreds of authors), you may get IP blocked or hit CAPTCHAs. This bot uses the `scholarly` library. It's recommended to run this script only once a day or a few times a week.

@@ -1,0 +1,35 @@
+name: Daily Scholar Check
+
+on:
+  schedule:
+    # Run once a day at 12:00 UTC
+    - cron: '0 12 * * *'
+  # Allow running manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-papers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Run script
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: uv run main.py
+
+      - name: Commit and push state changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.toml
+          # Only commit and push if there are changes
+          git diff --staged --quiet || (git commit -m "chore: update tracked papers state [skip ci]" && git push)
